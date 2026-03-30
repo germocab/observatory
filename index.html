@@ -210,7 +210,8 @@
         .check-icon { width:22px; height:22px; border:1.5px solid currentColor; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; cursor:pointer; pointer-events:auto; transition:background 0.2s, border-color 0.2s; }
         .completed .check-icon { background:var(--done-color); color:white; border-color:var(--done-color); }
         .task.active .check-icon:hover { background:var(--task-check-hover); }
-        .task.popping { animation:pop 0.35s forwards; pointer-events:none; }
+        .task.popping { animation:pop 0.35s forwards; pointer-events:none; transform:none !important; }
+        .note-card.popping { animation:pop 0.35s forwards; pointer-events:none; transform:none !important; }
         @keyframes pop { 0%{transform:scale(1);opacity:1} 100%{transform:scale(0);opacity:0} }
         .note-card { position:absolute; padding:12px 18px; border-radius:18px; backdrop-filter:blur(25px); cursor:grab; width:210px; user-select:none; display:flex; flex-direction:column; gap:3px; z-index:5; will-change:left,top,transform,opacity; word-wrap:break-word; animation:taskJump 0.5s cubic-bezier(0.34,1.56,0.64,1); background:var(--task-active-bg); border:1px dashed var(--border-strong); box-shadow:0 8px 28px var(--shadow); }
         .note-card:active { cursor:grabbing; }
@@ -694,7 +695,42 @@ function openSpaceCtxMenu(sp,anchorEl){
     const sh=document.createElement('div');sh.style.cssText='font-size:10px;letter-spacing:0.1em;text-transform:uppercase;opacity:0.4;padding:4px 12px 2px;font-family:var(--serif);';sh.textContent='Style';$ctxMenu.appendChild(sh);
     STYLES.forEach(st=>{const si=document.createElement('div');si.className='ctx-item'+(sp.style===st.id?' on':'');si.style.cssText=sp.style===st.id?'background:rgba(128,128,128,0.12);':'';si.innerHTML=`<span class="ctx-icon">${sp.style===st.id?'●':'○'}</span>${st.label} <span style="opacity:0.4;font-size:11px;margin-left:4px">${st.desc}</span>`;si.onclick=e=>{e.stopPropagation();closeCtxMenu();sp.style=st.id;if(sp.id===currentId){document.body.classList.remove('style-peace','style-fearless','style-paperwork');document.body.classList.add(`style-${st.id}`);const ip=st.id==='peace';document.documentElement.classList.toggle('dark',ip&&sp.isDark);document.body.classList.toggle('style-light',!ip&&!sp.isDark);blobColors(sp);}save();};$ctxMenu.appendChild(si);});
     if(!sp.isDefault&&!sp.isEverything){const dd=document.createElement('div');dd.className='ctx-divider';$ctxMenu.appendChild(dd);const di=document.createElement('div');di.className='ctx-item danger';di.innerHTML=`<span class="ctx-icon">◌</span>Delete universe`;di.onclick=e=>{e.stopPropagation();closeCtxMenu();deleteSpace(sp.id);};$ctxMenu.appendChild(di);}
-    if(sp.tasks.length>0&&!sp.isEverything){const dd2=document.createElement('div');dd2.className='ctx-divider';$ctxMenu.appendChild(dd2);const pi=document.createElement('div');pi.className='ctx-item danger';const isV=sp.isVoid;pi.innerHTML=`<span class="ctx-icon">✕</span>${isV?'Empty The Void':'Purge all tasks'}`;pi.onclick=e=>{e.stopPropagation();closeCtxMenu();const v=spaces.find(s=>s.isVoid);if(isV){sp.tasks.forEach(t=>document.getElementById(`task-${t.id}`)?.classList.add('popping'));setTimeout(()=>{if(sp.id===currentId){$spaceEl.innerHTML='';tasks=[];}sp.tasks=[];save();},400);}else{sp.tasks.forEach(t=>document.getElementById(`task-${t.id}`)?.classList.add('popping'));setTimeout(()=>{const keep=[],send=[];sp.tasks.forEach(t=>t.done?send.push(t):keep.push(t));send.forEach(t=>{t.x=innerWidth/2+(Math.random()-.5)*200;t.y=innerHeight/2+(Math.random()-.5)*200;t.vx=0;t.vy=0;t.tx=undefined;t.ty=undefined;v.tasks.push(t);});sp.tasks=keep;if(sp.id===currentId){tasks=sp.tasks;$spaceEl.innerHTML='';tasks.forEach(t=>renderTask(t));}save();},400);}};$ctxMenu.appendChild(pi);}
+    if(sp.tasks.length>0&&!sp.isEverything){const dd2=document.createElement('div');dd2.className='ctx-divider';$ctxMenu.appendChild(dd2);const pi=document.createElement('div');pi.className='ctx-item danger';const isV=sp.isVoid;pi.innerHTML=`<span class="ctx-icon">✕</span>${isV?'Empty The Void':'Purge all tasks'}`;pi.onclick=e=>{
+        e.stopPropagation();closeCtxMenu();
+        const v=spaces.find(s=>s.isVoid);
+        const toProcess=[...sp.tasks];
+        let remaining=toProcess.length;
+        if(remaining===0)return;
+        const done=()=>{
+            remaining--;
+            if(remaining===0){
+                if(isV){sp.tasks=[];}
+                else{sp.tasks=sp.tasks.filter(t=>t.done===false&&toProcess.find(p=>p.id===t.id));
+                    // Only keep tasks that weren't in the purge list
+                    sp.tasks=sp.tasks.filter(t=>!toProcess.find(p=>p.id===t.id&&p.done));
+                }
+                if(sp.id===currentId){tasks=sp.isEverything?everythingTasks():sp.tasks;$spaceEl.innerHTML='';tasks.forEach(t=>renderTask(t));}
+                save();
+            }
+        };
+        toProcess.forEach(t=>{
+            const el=document.getElementById(`task-${t.id}`);
+            if(!el){done();return;}
+            if(isV){
+                // Void: destroy all
+                disintegrate(el,()=>{sp.tasks=sp.tasks.filter(x=>x.id!==t.id);done();});
+            } else {
+                if(t.done){
+                    // Completed → send to Void
+                    disintegrate(el,()=>{sp.tasks=sp.tasks.filter(x=>x.id!==t.id);t.x=innerWidth/2+(Math.random()-.5)*200;t.y=innerHeight/2+(Math.random()-.5)*200;t.vx=0;t.vy=0;t.tx=undefined;t.ty=undefined;v.tasks.push(t);done();});
+                } else {
+                    // Active → pop and remove
+                    disintegrate(el,()=>{sp.tasks=sp.tasks.filter(x=>x.id!==t.id);done();});
+                }
+            }
+        });
+        if(sp.id===currentId){tasks=sp.isEverything?everythingTasks():sp.tasks;}
+    };$ctxMenu.appendChild(pi);}
     $ctxMenu.classList.remove('open');$ctxMenu.style.left='0px';$ctxMenu.style.top='0px';
     requestAnimationFrame(()=>{const r=anchorEl.getBoundingClientRect(),mw=$ctxMenu.offsetWidth||180,mh=$ctxMenu.offsetHeight||80;let left=r.right+8,top=r.top;if(left+mw>innerWidth-12)left=r.left-mw-8;if(left<12)left=12;if(top+mh>innerHeight-12)top=innerHeight-mh-12;if(top<12)top=12;$ctxMenu.style.left=left+'px';$ctxMenu.style.top=top+'px';$ctxMenu.classList.add('open');menuJustOpened=true;setTimeout(()=>{menuJustOpened=false;},200);});
 }
