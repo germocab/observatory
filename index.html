@@ -2,11 +2,83 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Observatory</title>
+
+    <!-- PWA -->
+    <meta name="application-name" content="Observatory">
+    <meta name="description" content="your companion for the day.">
+    <meta name="theme-color" content="#f0ece4" id="theme-color-meta">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Observatory">
+    <link rel="manifest" id="pwa-manifest">
+
+    <!-- PWA Icons (inline SVG as data URI) -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23f0ece4'/%3E%3Ccircle cx='256' cy='220' r='90' fill='none' stroke='%231a1814' stroke-width='18'/%3E%3Ccircle cx='256' cy='220' r='12' fill='%231a1814'/%3E%3Cline x1='256' y1='132' x2='256' y2='108' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='256' y1='308' x2='256' y2='332' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='168' y1='220' x2='144' y2='220' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='344' y1='220' x2='368' y2='220' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='193' y1='155' x2='176' y2='138' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='319' y1='285' x2='336' y2='302' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='319' y1='155' x2='336' y2='138' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='193' y1='285' x2='176' y2='302' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='256' y1='370' x2='256' y2='420' stroke='%231a1814' stroke-width='20' stroke-linecap='round'/%3E%3Cline x1='210' y1='420' x2='302' y2='420' stroke='%231a1814' stroke-width='20' stroke-linecap='round'/%3E%3C/svg%3E">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Special+Elite&family=Instrument+Sans:wght@700&display=swap" rel="stylesheet">
+
+    <script>
+    // ── INLINE MANIFEST ──
+    const manifest = {
+        name: "Observatory",
+        short_name: "Observatory",
+        description: "your companion for the day.",
+        start_url: "./",
+        display: "standalone",
+        orientation: "any",
+        background_color: "#f0ece4",
+        theme_color: "#f0ece4",
+        icons: [
+            {
+                src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23f0ece4'/%3E%3Ccircle cx='256' cy='220' r='90' fill='none' stroke='%231a1814' stroke-width='18'/%3E%3Ccircle cx='256' cy='220' r='12' fill='%231a1814'/%3E%3Cline x1='256' y1='132' x2='256' y2='108' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='256' y1='308' x2='256' y2='332' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='168' y1='220' x2='144' y2='220' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='344' y1='220' x2='368' y2='220' stroke='%231a1814' stroke-width='14' stroke-linecap='round'/%3E%3Cline x1='256' y1='370' x2='256' y2='420' stroke='%231a1814' stroke-width='20' stroke-linecap='round'/%3E%3Cline x1='210' y1='420' x2='302' y2='420' stroke='%231a1814' stroke-width='20' stroke-linecap='round'/%3E%3C/svg%3E",
+                sizes: "512x512",
+                type: "image/svg+xml",
+                purpose: "any maskable"
+            }
+        ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+
+    // ── SERVICE WORKER (inline via blob) ──
+    const swCode = `
+        const CACHE = 'observatory-v11';
+        const FONTS = [
+            'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Special+Elite&family=Instrument+Sans:wght@700&display=swap'
+        ];
+        self.addEventListener('install', e => {
+            e.waitUntil(
+                caches.open(CACHE).then(c => c.addAll(FONTS).catch(()=>{}))
+            );
+            self.skipWaiting();
+        });
+        self.addEventListener('activate', e => {
+            e.waitUntil(caches.keys().then(keys =>
+                Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))
+            ));
+            self.clients.claim();
+        });
+        self.addEventListener('fetch', e => {
+            e.respondWith(
+                caches.match(e.request).then(cached => cached || fetch(e.request).catch(() =>
+                    new Response('', {status:503})
+                ))
+            );
+        });
+    `;
+    if ('serviceWorker' in navigator) {
+        const swBlob = new Blob([swCode], {type:'application/javascript'});
+        const swURL  = URL.createObjectURL(swBlob);
+        navigator.serviceWorker.register(swURL, {scope: './'})
+            .then(() => console.log('Observatory SW registered'))
+            .catch(e => console.warn('SW registration failed:', e));
+    }
+    </script>
     <style>
         :root {
             --bg: #f0ece4; --text: #1a1814; --orange: #d93d00;
@@ -95,7 +167,12 @@
         body.style-paperwork.style-light .task.active { color: #0a1a40; }
         body.style-paperwork.style-light input::placeholder { color: rgba(10,30,100,0.3); }
         * { box-sizing:border-box; margin:0; padding:0; }
-        body { background:var(--bg); color:var(--text); font-family:var(--serif); height:100vh; width:100vw; overflow:hidden; display:flex; justify-content:center; align-items:center; transition:background-color 0.5s ease, color 0.5s ease; }
+        body { background:var(--bg); color:var(--text); font-family:var(--serif); height:100vh; width:100vw; overflow:hidden; display:flex; justify-content:center; align-items:center; transition:background-color 0.5s ease, color 0.5s ease;
+            /* Safe area for iPad home bar */
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
         body::before { content:''; position:fixed; inset:0; z-index:0; opacity:0.4; pointer-events:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"); }
         .bg-canvas { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; background:var(--bg); overflow:hidden; transition:background 0.5s ease; }
         .blob { position:absolute; width:700px; height:700px; border-radius:50%; filter:blur(130px); opacity:var(--blob-opacity); transition:background 4s ease, transform 12s ease-in-out, opacity 0.5s ease; }
@@ -631,7 +708,12 @@ document.getElementById('obs-new-space-btn').onclick=e=>{e.stopPropagation();cre
 
 function deleteSpace(id){const sp=spaces.find(s=>s.id===id);if(!sp||sp.isDefault||sp.isVoid||sp.isEverything)return;const v=spaces.find(s=>s.isVoid);sp.tasks.forEach(t=>{t.x=innerWidth/2+(Math.random()-.5)*200;t.y=innerHeight/2+(Math.random()-.5)*200;t.vx=0;t.vy=0;t.tx=undefined;t.ty=undefined;v.tasks.push(t);});spaces=spaces.filter(s=>s.id!==id);save();currentId===id?switchSpace(spaces[0].id):renderMenu();}
 
-$theme.onclick=()=>{const sp=cur();sp.isDark=!sp.isDark;const style=sp.style||'peace',ip=style==='peace';document.documentElement.classList.toggle('dark',ip&&sp.isDark);document.body.classList.toggle('style-light',!ip&&!sp.isDark);$theme.textContent=sp.isDark?'☾':'☀︎';blobColors(sp);save();};
+$theme.onclick=()=>{const sp=cur();sp.isDark=!sp.isDark;const style=sp.style||'peace',ip=style==='peace';document.documentElement.classList.toggle('dark',ip&&sp.isDark);document.body.classList.toggle('style-light',!ip&&!sp.isDark);$theme.textContent=sp.isDark?'☾':'☀︎';
+    // Update PWA theme-color
+    const bg=getComputedStyle(document.body).getPropertyValue('--bg').trim();
+    document.getElementById('theme-color-meta')?.setAttribute('content',bg);
+    blobColors(sp);save();
+};
 $speed.onclick=()=>{const sp=cur();sp.isSlow=!sp.isSlow;phys=sp.isSlow?PHYSICS.slow:PHYSICS.fast;$speed.textContent=sp.isSlow?'slow':'fast';$speed.classList.toggle('on',sp.isSlow);save();};
 
 function cyclePhrase(){if(phraseAnimating)return;phraseAnimating=true;const sp=cur(),pool=sp.isVoid?PHRASES.void:PHRASES.normal;const span=$header.querySelector('.phrase-text');span.classList.remove('sweep-in');span.classList.add('sweep-out');setTimeout(()=>{sp.phraseIndex=(sp.phraseIndex+1)%pool.length;span.textContent=pool[sp.phraseIndex];span.classList.remove('sweep-out');span.classList.add('sweep-in');setTimeout(()=>{phraseAnimating=false;},550);save();},480);}
