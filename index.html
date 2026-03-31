@@ -229,6 +229,9 @@
         .space-meta { font-size:11px; opacity:0.4; flex-shrink:0; }
         .menu-divider { height:1px; background:var(--border-strong); margin:6px 2px; }
         .void-row .space-name { opacity:0.5; }
+        #backup-row { display:flex; gap:6px; padding:4px 4px 2px; }
+        #backup-row .btn { flex:1; justify-content:center; font-size:11px; opacity:0.7; }
+        #backup-row .btn:hover { opacity:1; }
         .space-name-input { flex:1; background:transparent; border:none; outline:none; font-family:var(--serif); font-style:italic; font-size:14px; color:var(--text); padding:0; min-width:0; border-bottom:1px solid var(--border-strong); }
         .space-name-input::selection { background:rgba(128,128,128,0.25); }
         #overlay { position:fixed; inset:0; z-index:999; background:var(--bg); opacity:0; pointer-events:none; transition:opacity 0.3s ease; }
@@ -399,6 +402,12 @@
         <div id="spaces-list"></div>
         <div style="padding:6px 4px 2px;">
             <button class="btn pill" id="new-space-btn" style="width:100%;justify-content:center;">+ new universe</button>
+        </div>
+        <div class="menu-divider"></div>
+        <div id="backup-row">
+            <button class="btn pill" id="export-btn">export backup</button>
+            <label class="btn pill" for="import-file-input" id="import-btn">import backup</label>
+            <input type="file" id="import-file-input" accept=".json" style="display:none">
         </div>
     </div>
     <div id="corner-btns">
@@ -741,6 +750,57 @@ function toRoman(n){const v=[1000,900,500,400,100,90,50,40,10,9,5,4,1],s=['M','C
 function createNewUniverse(){closeMenu();closeObservatory();const n=spaces.filter(s=>!s.isVoid&&!s.isEverything).length+1;const sp=mkSpace({name:`Universe ${toRoman(n)}`});spaces.push(sp);save();switchSpace(sp.id);}
 $newSpace.onclick=createNewUniverse;
 document.getElementById('obs-new-space-btn').onclick=e=>{e.stopPropagation();createNewUniverse();};
+
+// ── EXPORT ──
+document.getElementById('export-btn').onclick = () => {
+    closeMenu();
+    const data = localStorage.getItem('observatory_v10') || '{}';
+    const now = new Date();
+    const stamp = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const filename = `observatory-backup-${stamp}.json`;
+    const blob = new Blob([data], {type:'application/json'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Backup downloaded.');
+};
+
+// ── IMPORT ──
+document.getElementById('import-file-input').onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        try {
+            const parsed = JSON.parse(ev.target.result);
+            // Validate it looks like an Observatory backup
+            if (!parsed.spaces || !Array.isArray(parsed.spaces))
+                throw new Error('Invalid backup file.');
+            // Overwrite localStorage and reload state
+            localStorage.setItem('observatory_v10', ev.target.result);
+            // Reload spaces from the imported data
+            spaces = parsed.spaces.map(s => mkSpace(s));
+            currentId = parsed.currentId || spaces[0]?.id;
+            if (!spaces.find(s=>s.isEverything))
+                spaces.unshift(mkSpace({id:'everything',name:'Everything',isEverything:true,isDefault:true}));
+            if (!spaces.find(s=>s.isVoid))
+                spaces.push(mkSpace({id:'void',name:'The Void',isVoid:true,isDark:true,isSlow:true,blobHue:0}));
+            if (!spaces.find(s=>s.id===currentId)) currentId = spaces[0].id;
+            closeMenu();
+            $spaceEl.innerHTML='';
+            applySpace(cur());
+            showToast('Backup imported successfully!');
+        } catch(err) {
+            showToast('Could not read backup file.');
+        }
+        // Reset so same file can be re-imported if needed
+        e.target.value = '';
+    };
+    reader.readAsText(file);
+};
 
 function deleteSpace(id){const sp=spaces.find(s=>s.id===id);if(!sp||sp.isDefault||sp.isVoid||sp.isEverything)return;const v=spaces.find(s=>s.isVoid);sp.tasks.forEach(t=>{t.x=innerWidth/2+(Math.random()-.5)*200;t.y=innerHeight/2+(Math.random()-.5)*200;t.vx=0;t.vy=0;t.tx=undefined;t.ty=undefined;v.tasks.push(t);});spaces=spaces.filter(s=>s.id!==id);save();currentId===id?switchSpace(spaces[0].id):renderMenu();}
 
