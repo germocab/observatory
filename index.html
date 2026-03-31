@@ -375,6 +375,35 @@
             margin-top:10px; pointer-events:auto;
         }
         #list-align-bar.visible { display:flex; }
+
+        /* ── UNIVERSE SEARCH ── */
+        #universe-search-wrap {
+            position:fixed; top:70px; left:50%; transform:translateX(-50%);
+            z-index:201; display:none; pointer-events:none;
+            opacity:0; transition:opacity 0.25s ease;
+        }
+        #universe-search-wrap.visible {
+            display:flex; pointer-events:auto; opacity:1;
+        }
+        #universe-search-inner {
+            width:260px;
+        }
+        #universe-search-input {
+            background:transparent; border:none; color:var(--text);
+            padding:8px 10px; font-size:14px; outline:none;
+            font-family:var(--serif); font-style:italic; width:210px;
+        }
+        #universe-search-input::placeholder { color:rgba(26,24,20,0.35); opacity:1; }
+        :root.dark #universe-search-input::placeholder { color:rgba(245,245,247,0.3); }
+        #universe-search-clear {
+            width:24px; height:24px; border-radius:50%; border:none;
+            background:transparent; color:var(--text); opacity:0;
+            cursor:pointer; font-size:11px; display:flex;
+            align-items:center; justify-content:center;
+            transition:opacity 0.15s, background 0.15s; flex-shrink:0;
+        }
+        #universe-search-clear.visible { opacity:0.45; }
+        #universe-search-clear:hover { opacity:1 !important; background:rgba(128,128,128,0.12); }
         .align-btn {
             height:28px; padding:0 12px; border-radius:20px; border:1px solid var(--border-strong);
             background:var(--surface); color:var(--text); cursor:pointer;
@@ -472,7 +501,7 @@
     </div>
     <div id="splash">
         <div id="splash-name">Observatory</div>
-        <div id="splash-version">Version 15.0</div>
+        <div id="splash-version">Version 17.5</div>
         <div id="splash-tagline">your companion for the day.</div>
     </div>
     <div id="observatory">
@@ -541,6 +570,14 @@
             <button class="align-btn"        id="align-right"  title="Align right">· ⬛</button>
         </div>
     </div>
+    <!-- Universe search — fixed, visible only in list view -->
+    <div id="universe-search-wrap">
+        <div class="input-wrapper" id="universe-search-inner">
+            <input type="text" id="universe-search-input" placeholder="Search bubbles..." autocomplete="off">
+            <button id="universe-search-clear" title="Clear">✕</button>
+        </div>
+    </div>
+
     <div id="select-bar">
         <span id="select-count">0 selected</span>
         <button class="sel-btn neutral" id="sel-move-btn">⇢ Move to universe</button>
@@ -786,6 +823,13 @@ function applySpace(sp){
     tasks = sp.isEverything ? everythingTasks() : sp.tasks;
     tasks.forEach(t=>renderTask(t));
     isListView=false;$sort.classList.remove('active');$hub.classList.remove('list-mode');
+    $listAlignBar.classList.remove('visible');
+    // Clear universe search
+    if(typeof $universeSearchWrap!=='undefined'){
+        $universeSearchWrap.classList.remove('visible');
+        $universeSearchInput.value='';
+        $universeSearchClear.classList.remove('visible');
+    }
     if(phraseTimer)clearInterval(phraseTimer);phraseAnimating=false;
     const pool=sp.isVoid?PHRASES.void:PHRASES.normal;sp.phraseIndex=sp.phraseIndex%pool.length;
     const span=$header.querySelector('.phrase-text');span.className='phrase-text';span.textContent=pool[sp.phraseIndex];
@@ -994,11 +1038,62 @@ $alignBtns.left.onclick   = () => setListAlign('left');
 $alignBtns.center.onclick = () => setListAlign('center');
 $alignBtns.right.onclick  = () => setListAlign('right');
 
+// ── UNIVERSE SEARCH ──
+const $universeSearchWrap  = document.getElementById('universe-search-wrap');
+const $universeSearchInput = document.getElementById('universe-search-input');
+const $universeSearchClear = document.getElementById('universe-search-clear');
+
+function applyUniverseSearch(q) {
+    const query = q.trim().toLowerCase();
+    tasks.forEach(t => {
+        const el = document.getElementById(`task-${t.id}`);
+        if (!el) return;
+        if (!query) { el.style.opacity = ''; el.style.pointerEvents = ''; return; }
+        const haystack = t.type === 'note'
+            ? ((t.title||'') + ' ' + (t.body||'')).toLowerCase()
+            : (t.text||'').toLowerCase();
+        const matches = haystack.includes(query);
+        el.style.opacity = matches ? '1' : '0.1';
+        el.style.pointerEvents = matches ? '' : 'none';
+    });
+}
+
+$universeSearchInput.addEventListener('input', () => {
+    const q = $universeSearchInput.value;
+    $universeSearchClear.classList.toggle('visible', q.length > 0);
+    applyUniverseSearch(q);
+});
+
+$universeSearchClear.onclick = () => {
+    $universeSearchInput.value = '';
+    $universeSearchClear.classList.remove('visible');
+    applyUniverseSearch('');
+    $universeSearchInput.focus();
+};
+
+// Stop keyboard shortcuts firing while typing in universe search
+$universeSearchInput.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        $universeSearchInput.value = '';
+        $universeSearchClear.classList.remove('visible');
+        applyUniverseSearch('');
+        $universeSearchInput.blur();
+    }
+    e.stopPropagation();
+});
+
 $sort.onclick=()=>{
     isListView=!isListView;
     $sort.classList.toggle('active',isListView);
     $hub.classList.toggle('list-mode',isListView);
     $listAlignBar.classList.toggle('visible', isListView);
+    $universeSearchWrap.classList.toggle('visible', isListView);
+    if(!isListView){
+        // Clear search when leaving list view
+        $universeSearchInput.value='';
+        $universeSearchClear.classList.remove('visible');
+        applyUniverseSearch('');
+    }
     if(isListView){applyListLayout();}
     else{const W=innerWidth,H=innerHeight;tasks.forEach(t=>{const a=Math.random()*Math.PI*2,d=t.done?(Math.min(W,H)*0.4):(180+Math.random()*100);t.tx=(W/2)+Math.cos(a)*d;t.ty=(H/2)+Math.sin(a)*d;t.vx=(W/2-t.x)*0.05;t.vy=(H/2-t.y)*0.05;});}
 };
