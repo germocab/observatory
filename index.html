@@ -212,6 +212,27 @@
         .task.active .check-icon:hover { background:var(--task-check-hover); }
         .task.popping { animation:pop 0.35s forwards; pointer-events:none; transform:none !important; }
         .note-card.popping { animation:pop 0.35s forwards; pointer-events:none; transform:none !important; }
+
+        /* ── PRIORITY ── */
+        .task.priority, .note-card.priority {
+            transform-origin: center center;
+            animation: taskJump 0.5s cubic-bezier(0.34,1.56,0.64,1), priorityPulse 2.8s ease-in-out 0.5s infinite;
+            scale: 1.12;
+            box-shadow: 0 0 0 2px var(--orange), 0 8px 32px var(--shadow), 0 0 24px rgba(217,61,0,0.25) !important;
+            border-color: var(--orange) !important;
+            z-index: 6;
+        }
+        @keyframes priorityPulse {
+            0%, 100% { box-shadow: 0 0 0 2px var(--orange), 0 8px 32px var(--shadow), 0 0 18px rgba(217,61,0,0.2); }
+            50%       { box-shadow: 0 0 0 3px var(--orange), 0 12px 40px var(--shadow), 0 0 36px rgba(217,61,0,0.45); }
+        }
+        /* Show priorities filter — dim non-priority bubbles */
+        body.show-priorities .task:not(.priority),
+        body.show-priorities .note-card:not(.priority) {
+            opacity: 0.12 !important;
+            pointer-events: none;
+        }
+        #priority-btn.on { background:var(--orange); color:white; border-color:var(--orange); }
         @keyframes pop { 0%{transform:scale(1);opacity:1} 100%{transform:scale(0);opacity:0} }
         .note-card { position:absolute; padding:12px 18px; border-radius:18px; backdrop-filter:blur(25px); cursor:grab; width:210px; user-select:none; display:flex; flex-direction:column; gap:3px; z-index:5; will-change:left,top,transform,opacity; word-wrap:break-word; animation:taskJump 0.5s cubic-bezier(0.34,1.56,0.64,1); background:var(--task-active-bg); border:1px dashed var(--border-strong); box-shadow:0 8px 28px var(--shadow); }
         .note-card:active { cursor:grabbing; }
@@ -451,7 +472,7 @@
     </div>
     <div id="splash">
         <div id="splash-name">Observatory</div>
-        <div id="splash-version">Version 14.0</div>
+        <div id="splash-version">Version 15.0</div>
         <div id="splash-tagline">your companion for the day.</div>
     </div>
     <div id="observatory">
@@ -492,6 +513,7 @@
         </div>
     </div>
     <div id="corner-btns">
+        <button class="btn pill" id="priority-btn">★ priorities</button>
         <button class="btn pill" id="select-btn">select <span class="kbd">S</span></button>
         <button class="btn pill" id="speed-btn">fast</button>
         <button class="btn round" id="theme-btn">☀︎</button>
@@ -545,7 +567,7 @@ function save() {
             id:s.id, name:s.name, isVoid:!!s.isVoid, isDefault:!!s.isDefault, isEverything:!!s.isEverything,
             isDark:s.isDark, isSlow:s.isSlow, style:s.style||'peace', phraseIndex:s.phraseIndex, blobHue:s.blobHue,
             // Everything has no own tasks — they live in their home spaces
-            tasks: s.isEverything ? [] : s.tasks.map(t=>({id:t.id,text:t.text,done:t.done,x:t.x,y:t.y,tx:t.tx,ty:t.ty,image:t.image||null,createdAt:t.createdAt||null,type:t.type||'task',title:t.title||null,body:t.body||null}))
+            tasks: s.isEverything ? [] : s.tasks.map(t=>({id:t.id,text:t.text,done:t.done,x:t.x,y:t.y,tx:t.tx,ty:t.ty,image:t.image||null,createdAt:t.createdAt||null,type:t.type||'task',title:t.title||null,body:t.body||null,priority:t.priority||false}))
         }))
     }));
 }
@@ -668,6 +690,16 @@ function openCtxMenu(task,anchorEl){
         const others=spaces.filter(s=>!s.isVoid&&!s.isEverything&&s.id!==currentId);
         if(others.length>0){const pd=document.createElement('div');pd.className='ctx-item';pd.innerHTML=`<span class="ctx-icon">⇢</span>Send to universe`;const sub=document.createElement('div');sub.className='ctx-submenu';others.forEach(s=>{const si=document.createElement('div');si.className='ctx-sub-item';si.innerHTML=`<span class="ctx-sub-dot" style="background:hsl(${s.blobHue},50%,${s.isDark?'45%':'60%'})"></span>${s.name}`;si.onclick=e=>{e.stopPropagation();closeCtxMenu();sendToSpace(task,s.id);};sub.appendChild(si);});pd.onclick=e=>{e.stopPropagation();sub.classList.toggle('open');};$ctxMenu.appendChild(pd);$ctxMenu.appendChild(sub);divider();}
         item('◌','Send to The Void','danger',()=>sendToVoid(task));
+        divider();
+        item(task.priority?'★':'☆', task.priority?'Un-priority':'Priority', task.priority?'':'', () => {
+            task.priority = !task.priority;
+            const el = document.getElementById(`task-${task.id}`);
+            if (el) {
+                const base = task.type==='note' ? 'note-card' : `task ${task.done?'completed':'active'}`;
+                el.className = base + (task.priority?' priority':'');
+            }
+            save();
+        });
         divider();item('◎','Focus','',()=>openFocus(task));
     }else{
         item('↑','Move to Universe','',()=>recoverFromVoid(task));divider();
@@ -737,6 +769,8 @@ $focusBackdrop.addEventListener('mousedown',e=>{if(!$focusModal.contains(e.targe
 
 function applySpace(sp){
     if(typeof exitSelectMode==='function')exitSelectMode();
+    // Reset priorities filter
+    if(typeof showPrioritiesMode!=='undefined'&&showPrioritiesMode){showPrioritiesMode=false;document.body.classList.remove('show-priorities');const pb=document.getElementById('priority-btn');if(pb)pb.classList.remove('on');}
     if(sp.isVoid)sp.isDark=true;
     const style=sp.style||'peace',isPeace=style==='peace';
     document.documentElement.classList.toggle('dark',isPeace?sp.isDark:false);
@@ -904,8 +938,14 @@ $header.addEventListener('click',cyclePhrase);
 
 function renderTask(t){
     const isNote=t.type==='note';const el=document.createElement('div');el.id=`task-${t.id}`;
-    if(isNote){el.className='note-card';const title=t.title||'New note',preview=t.body||'';el.innerHTML=`<div class="note-title">${title}</div><div class="note-preview" style="${preview?'':'opacity:0;height:0;min-height:0;'}">${preview}</div>`;}
-    else{el.className=`task ${t.done?'completed':'active'}`;el.innerHTML=`<div class="check-icon">${t.done?'✓':''}</div><span>${t.text}</span>`;}
+    if (isNote) {
+        el.className = 'note-card' + (t.priority?' priority':'');
+        const title=t.title||'New note',preview=t.body||'';
+        el.innerHTML=`<div class="note-title">${title}</div><div class="note-preview" style="${preview?'':'opacity:0;height:0;min-height:0;'}">${preview}</div>`;
+    } else {
+        el.className = `task ${t.done?'completed':'active'}${t.priority?' priority':''}`;
+        el.innerHTML=`<div class="check-icon">${t.done?'✓':''}</div><span>${t.text}</span>`;
+    }
     if(t.x===undefined){t.x=innerWidth/2;t.y=innerHeight/2;}t.vx=0;t.vy=0;
     el.onmousedown=e=>{if(e.button===2)return;if(isSelectMode){if(selectedIds.has(t.id)){selectedIds.delete(t.id);el.classList.remove('selected');}else{selectedIds.add(t.id);el.classList.add('selected');}updateSelectBar();return;}if(!isNote&&e.target.closest('.check-icon'))toggleTask(t,el);else if(!isListView&&!cur().isVoid)draggedTask=t;};
     el.oncontextmenu=e=>{e.preventDefault();e.stopPropagation();draggedTask=null;menuJustOpened=true;openCtxMenu(t,el);setTimeout(()=>{menuJustOpened=false;},200);};
@@ -1009,6 +1049,13 @@ function tickClock(){const now=new Date();document.getElementById('clock-time').
 tickClock();setInterval(tickClock,10000);
 
 const $selectBtn=document.getElementById('select-btn'),$selectBar=document.getElementById('select-bar');
+const $priorityBtn=document.getElementById('priority-btn');
+let showPrioritiesMode=false;
+$priorityBtn.onclick=()=>{
+    showPrioritiesMode=!showPrioritiesMode;
+    $priorityBtn.classList.toggle('on',showPrioritiesMode);
+    document.body.classList.toggle('show-priorities',showPrioritiesMode);
+};
 const $selectCount=document.getElementById('select-count'),$selMoveBtn=document.getElementById('sel-move-btn'),$selVoidBtn=document.getElementById('sel-void-btn');
 let isSelectMode=false,selectedIds=new Set();
 function enterSelectMode(){isSelectMode=true;$selectBtn.classList.add('on');$selectBar.classList.add('visible');updateSelectBar();}
