@@ -1195,8 +1195,6 @@ document.addEventListener('keydown',e=>{
         case 'd':$theme.click();break;
         case 'tab':e.preventDefault();{const ordered=spaces.filter(s=>!s.isVoid).concat(spaces.filter(s=>s.isVoid));const ci=ordered.findIndex(s=>s.id===currentId);const ni=(ci+1)%ordered.length;const ns=ordered[ni];showToast(`Changing to ${ns.name}`);switchSpace(ns.id);}break;
         case 'escape':if(obsOpen){closeObservatory();return;}if(isSelectMode){exitSelectMode();return;}if($uMenu.classList.contains('open')){closeMenu();return;}if($ctxMenu.classList.contains('open')){closeCtxMenu();return;}if(focusTask){closeFocus();return;}break;
-        case 'escape':if(obsClosed){openObservatory();return;}if(isSelectMode){exitSelectMode();return;}if($uMenu.classList.contains('open')){closeMenu();return;}if($ctxMenu.classList.contains('open')){closeCtxMenu();return;}if(focusTask){closeFocus();return;}break;
-
     }
 });
 
