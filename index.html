@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Observatory</title>
+    <title>Observatory 17.6.1</title>
 
     <!-- PWA -->
     <meta name="application-name" content="Observatory">
@@ -501,7 +501,7 @@
     </div>
     <div id="splash">
         <div id="splash-name">Observatory</div>
-        <div id="splash-version">Version 17.5</div>
+        <div id="splash-version">Version 17.6.1</div>
         <div id="splash-tagline">your companion for the day.</div>
     </div>
     <div id="observatory">
@@ -526,7 +526,7 @@
         <div id="clock-date"></div>
     </div>
     <div id="top-bar">
-        <button class="btn pill" id="universe-btn">universes ✦</button>
+        <button class="btn pill" id="universe-btn">Universes</button>
     </div>
     <div id="universe-menu">
         <div class="menu-label">Your Universes</div>
@@ -542,9 +542,9 @@
         </div>
     </div>
     <div id="corner-btns">
-        <button class="btn pill" id="priority-btn">★ priorities</button>
-        <button class="btn pill" id="select-btn">select <span class="kbd">S</span></button>
-        <button class="btn pill" id="speed-btn">fast</button>
+        <button class="btn pill" id="priority-btn">Priorities</button>
+        <button class="btn pill" id="select-btn">Select <span class="kbd">S</span></button>
+        <button class="btn pill" id="speed-btn">Fast</button>
         <button class="btn round" id="theme-btn">☀︎</button>
     </div>
     <div class="bg-canvas">
@@ -559,15 +559,15 @@
                 <input type="text" id="task-input" placeholder="Next move..." autocomplete="off">
                 <button class="btn sm" id="add-btn">+</button>
             </div>
-            <button class="btn sm" id="sort-btn" title="List/Flying [L]">☰</button>
+            <button class="btn sm" id="sort-btn" title="List/Bubbles [L]">☰</button>
         </div>
         <div id="note-btn-wrap">
-            <button class="btn pill" id="note-btn">✎ new note</button>
+            <button class="btn pill" id="note-btn">✎ New Note</button>
         </div>
         <div id="list-align-bar">
-            <button class="align-btn active" id="align-left"   title="Align left">⬛ ·</button>
-            <button class="align-btn"        id="align-center" title="Align center">· ⬛ ·</button>
-            <button class="align-btn"        id="align-right"  title="Align right">· ⬛</button>
+            <button class="align-btn active" id="align-left"   title="Align left">Left</button>
+            <button class="align-btn"        id="align-center" title="Align center">Center</button>
+            <button class="align-btn"        id="align-right"  title="Align right">Right</button>
         </div>
     </div>
     <!-- Universe search — fixed, visible only in list view -->
@@ -587,8 +587,8 @@
 
 <script>
 const PHRASES = {
-    normal: ["Always a warrior.","Move in silence.","You're not Standard, you're Deluxe","Secure the bag.","Calculated, cold.","Fight for it","Keep Up Bro","they'll never know until it's done","are you ready for it?","Fight for it","Man, you can do this","I'm proud, are you?","Unstoppable","It's time to work hard","Friends? Nah, just casual connections","Never giving up","Who writes all of this?","Wow! You're so productive","Keep Going","WE CAN BE HEROES!","This is like Minecraft random text","Depression not welcomed","Go ahead","Shattered screens by so many notes","So responsable","Fun? Not today, Tasks? Oh yeah","Hello dumbass","Elcome to Focus Avenue","Police man? He went right there","Do you like Dua Lipa?","Keep working already...","Wowowowow, chill","Chill pill in, focus locked in","Woof","Meow, i'm a cow","Cool face, did you wash it?","Touch that keyboard now","Pressing, pressing and?","Hahaha, yeah, i'm laughing at you","Punch your boss IN DA FACE","Money, money, money, must be funny","YOUR REPUTATION PRECEDES ME","Now laughing now","*punch* *punch* Oh, thaat was you","Welcome future CEO","Is your name William? No? Ok","Bunch of words","Falling asleepppppppppzzzzz","It's me! Hi! I'm the focus it's me!","Yooooo","Dude, you're on fire now!","You got this"],
-    void:   ["Gone but not forgotten.","The end of the line.","Rest here.","Nothing lasts forever.","Into the abyss."]
+    normal: ["Always a warrior.","Move in silence.","You're not Standard, you're Deluxe","Secure the bag.","Calculated, cold.","Fight for it","Keep Up Bro","they'll never know until it's done","are you ready for it?","Fight for it","Man, you can do this","I'm proud, are you?","Unstoppable","It's time to work hard","Friends? Nah, just casual connections","Never giving up","Who writes all of this?","Wow! You're so productive","Keep Going","WE CAN BE HEROES!","This is like Minecraft random text","Depression not welcomed","Go ahead","Shattered screens by so many notes","So responsable","Fun? Not today, Tasks? Oh yeah","Hello dumbass","Welcome to Focus Avenue","Police man? He went right there","Do you like Dua Lipa?","Keep working already...","Wowowowow, chill","Chill pill in, focus locked in","Woof","Meow, i'm a cow","Cool face, did you wash it?","Touch that keyboard now","Pressing, pressing and?","Hahaha, yeah, i'm laughing at you","Punch your boss IN DA FACE","Money, money, money, must be funny","YOUR REPUTATION PRECEDES ME","Now laughing now","*punch* *punch* Oh, thaat was you","Welcome future CEO","Is your name William? No? Ok","Bunch of words","Falling asleepppppppppzzzzz","It's me! Hi! I'm the focus it's me!","Yooooo","Dude, you're on fire now!","You got this"],
+    void:   ["Gone but not forgotten.","The end of the line.","Rest here.","Nothing lasts forever.","Into the abyss.","So this is life... Waiting to be garbage","It's so dark in here",":(","Noooooooooooo, i'm trash now"]
 };
 const PHYSICS = {
     fast: {drag:0.18,friction:0.984,floatAmp:0.018,springFast:0.00008,springSlow:0.00025,speedThreshold:4,throwMult:1.1,restitution:0.55},
