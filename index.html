@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Observatory 18</title>
+    <title>Observatory</title>
 
     <!-- PWA -->
     <meta name="application-name" content="Observatory">
@@ -114,8 +114,8 @@
             --task-active-bg: rgba(10,30,8,0.88);
             --task-check-hover: rgba(180,255,80,0.15);
             --phrase-font: "Bebas Neue", Impact, sans-serif;
-            --phrase-size: 3.0rem; --phrase-weight: 700;
-            --phrase-style: italic; --phrase-spacing: 0.05em;
+            --phrase-size: 3.2rem; --phrase-weight: 900;
+            --phrase-style: italic; --phrase-spacing: 0.06em;
             --task-font: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
             --task-size: 13px; --task-weight: 700;
             --done-color: #7ec850;
@@ -331,7 +331,7 @@
         #clock { position:fixed; top:18px; left:18px; z-index:200; pointer-events:auto; user-select:none; cursor:pointer; }
         #clock:hover #clock-time { opacity:1; }
         #clock:hover #clock-date { opacity:0.65; }
-        #clock-time { font-family:var(--phrase-font); font-style:var(--phrase-style); font-size:2.4rem; font-weight:var(--phrase-weight); color:var(--text); letter-spacing:var(--phrase-spacing); line-height:1.1; opacity:0.75; transition:font-family 0.4s ease, font-size 0.4s ease; }
+        #clock-time { font-family:var(--phrase-font); font-style:var(--phrase-style); font-size:1.5rem; font-weight:var(--phrase-weight); color:var(--text); letter-spacing:var(--phrase-spacing); line-height:1.1; opacity:0.75; transition:font-family 0.4s ease, font-size 0.4s ease; }
         #clock-date { font-family:var(--phrase-font); font-style:var(--phrase-style); font-size:0.65rem; font-weight:var(--phrase-weight); color:var(--text); opacity:0.4; letter-spacing:0.06em; text-transform:uppercase; margin-top:1px; transition:font-family 0.4s ease; }
         .task.selected { outline:2px solid var(--text); outline-offset:2px; transform:scale(1.04) !important; }
         .task.selected.completed { outline-color:var(--done-color); }
@@ -376,7 +376,20 @@
         }
         #list-align-bar.visible { display:flex; }
 
-        /* ── UNIVERSE SEARCH ── */
+        /* ── LIST SCROLL INDICATOR ── */
+        #list-scroll-bar {
+            position:fixed; right:12px; top:50%; transform:translateY(-50%);
+            width:3px; border-radius:3px; background:var(--border-strong);
+            z-index:201; opacity:0; pointer-events:none;
+            transition:opacity 0.3s ease;
+        }
+        #list-scroll-bar.visible { opacity:0.5; }
+        #list-scroll-thumb {
+            width:100%; border-radius:3px;
+            background:var(--text); opacity:0.5;
+            position:absolute; left:0;
+            transition:top 0.1s ease, height 0.1s ease;
+        }
         #universe-search-wrap {
             position:fixed; top:70px; left:50%; transform:translateX(-50%);
             z-index:201; display:none; pointer-events:none;
@@ -483,7 +496,7 @@
     <div id="ctx-menu"></div>
     <div id="toast"></div>
     <div id="focus-backdrop"></div>
-    <button id="focus-bubble-btn" title="Back to Bubble mode">Back to Bubble</button>
+    <button id="focus-bubble-btn" title="Back to bubble mode">↗ Back to Bubble</button>
     <div id="focus-modal">
         <div id="focus-image-wrap">
             <img id="focus-img" src="" alt="">
@@ -494,16 +507,15 @@
         <div id="focus-done-bar"></div>
         <div id="focus-actions">
             <button class="focus-btn done-btn" id="focus-done-btn">✓ Mark as done</button>
-            <label class="focus-btn" for="focus-image-input">Add image</label>
+            <label class="focus-btn" for="focus-image-input">⊕ Add image</label>
             <input type="file" id="focus-image-input" accept="image/*">
         </div>
         <div id="focus-created" style="font-family:var(--serif);font-style:italic;font-size:11px;opacity:0.35;margin-top:4px;"></div>
     </div>
     <div id="splash">
         <div id="splash-name">Observatory</div>
-        <div id="splash-version">Version 18.0 - Beta</div>
-        <div id="splash-tagline">Your true companion for life.</div>
-        
+        <div id="splash-version">Version 11.0</div>
+        <div id="splash-tagline">your companion for the day.</div>
     </div>
     <div id="observatory">
         <div id="obs-new-universe">
@@ -527,7 +539,7 @@
         <div id="clock-date"></div>
     </div>
     <div id="top-bar">
-        <button class="btn pill" id="universe-btn">Universes</button>
+        <button class="btn pill" id="universe-btn">universes ✦</button>
     </div>
     <div id="universe-menu">
         <div class="menu-label">Your Universes</div>
@@ -543,9 +555,9 @@
         </div>
     </div>
     <div id="corner-btns">
-        <button class="btn pill" id="priority-btn">Priorities</button>
-        <button class="btn pill" id="select-btn">Select <span class="kbd">S</span></button>
-        <button class="btn pill" id="speed-btn">Fast</button>
+        <button class="btn pill" id="priority-btn">★ priorities</button>
+        <button class="btn pill" id="select-btn">select <span class="kbd">S</span></button>
+        <button class="btn pill" id="speed-btn">fast</button>
         <button class="btn round" id="theme-btn">☀︎</button>
     </div>
     <div class="bg-canvas">
@@ -560,15 +572,15 @@
                 <input type="text" id="task-input" placeholder="Next move..." autocomplete="off">
                 <button class="btn sm" id="add-btn">+</button>
             </div>
-            <button class="btn sm" id="sort-btn" title="List/Bubbles [L]">☰</button>
+            <button class="btn sm" id="sort-btn" title="List/Flying [L]">☰</button>
         </div>
         <div id="note-btn-wrap">
-            <button class="btn pill" id="note-btn">✎ New Note</button>
+            <button class="btn pill" id="note-btn">✎ new note</button>
         </div>
         <div id="list-align-bar">
-            <button class="align-btn active" id="align-left"   title="Align left">Left</button>
-            <button class="align-btn"        id="align-center" title="Align center">Center</button>
-            <button class="align-btn"        id="align-right"  title="Align right">Right</button>
+            <button class="align-btn active" id="align-left"   title="Align left">⬛ ·</button>
+            <button class="align-btn"        id="align-center" title="Align center">· ⬛ ·</button>
+            <button class="align-btn"        id="align-right"  title="Align right">· ⬛</button>
         </div>
     </div>
     <!-- Universe search — fixed, visible only in list view -->
@@ -579,6 +591,9 @@
         </div>
     </div>
 
+    <!-- List scroll indicator -->
+    <div id="list-scroll-bar"><div id="list-scroll-thumb"></div></div>
+
     <div id="select-bar">
         <span id="select-count">0 selected</span>
         <button class="sel-btn neutral" id="sel-move-btn">⇢ Move to universe</button>
@@ -588,8 +603,8 @@
 
 <script>
 const PHRASES = {
-    normal: ["Always a warrior.","Move in silence.","You're not Standard, you're Deluxe","Secure the bag.","Calculated, cold.","Fight for it","Keep Up Bro","they'll never know until it's done","are you ready for it?","Fight for it","Man, you can do this","I'm proud, are you?","Unstoppable","It's time to work hard","Friends? Nah, just casual connections","Never giving up","Who writes all of this?","Wow! You're so productive","Keep Going","WE CAN BE HEROES!","This is like Minecraft random text","Depression not welcomed","Go ahead","Shattered screens by so many notes","So responsable","Fun? Not today, Tasks? Oh yeah","Hello dumbass","Welcome to Focus Avenue","Police man? He went right there","Do you like Dua Lipa?","Keep working already...","Wowowowow, chill","Chill pill in, focus locked in","Woof","Meow, i'm a cow","Cool face, did you wash it?","Touch that keyboard now","Pressing, pressing and?","Hahaha, yeah, i'm laughing at you","Punch your boss IN DA FACE","Money, money, money, must be funny","YOUR REPUTATION PRECEDES ME","Now laughing now","*punch* *punch* Oh, thaat was you","Welcome future CEO","Is your name William? No? Ok","Bunch of words","Falling asleepppppppppzzzzz","It's me! Hi! I'm the focus it's me!","Yooooo","Dude, you're on fire now!","You got this"],
-    void:   ["Gone but not forgotten.","The end of the line.","Rest here.","Nothing lasts forever.","Into the abyss.","So this is life... Waiting to be garbage","It's so dark in here",":(","Noooooooooooo, i'm trash now"]
+    normal: ["Always a warrior.","Move in silence.","You're not Standard, you're Deluxe","Secure the bag.","Calculated, cold.","Fight for it"],
+    void:   ["Gone but not forgotten.","The end of the line.","Rest here.","Nothing lasts forever.","Into the abyss."]
 };
 const PHYSICS = {
     fast: {drag:0.18,friction:0.984,floatAmp:0.018,springFast:0.00008,springSlow:0.00025,speedThreshold:4,throwMult:1.1,restitution:0.55},
@@ -825,6 +840,7 @@ function applySpace(sp){
     tasks.forEach(t=>renderTask(t));
     isListView=false;$sort.classList.remove('active');$hub.classList.remove('list-mode');
     $listAlignBar.classList.remove('visible');
+    listScrollY = 0;
     // Clear universe search
     if(typeof $universeSearchWrap!=='undefined'){
         $universeSearchWrap.classList.remove('visible');
@@ -1090,21 +1106,85 @@ $sort.onclick=()=>{
     $listAlignBar.classList.toggle('visible', isListView);
     $universeSearchWrap.classList.toggle('visible', isListView);
     if(!isListView){
-        // Clear search when leaving list view
+        listScrollY = 0;
         $universeSearchInput.value='';
         $universeSearchClear.classList.remove('visible');
         applyUniverseSearch('');
+        updateListScrollBar();
     }
     if(isListView){applyListLayout();}
     else{const W=innerWidth,H=innerHeight;tasks.forEach(t=>{const a=Math.random()*Math.PI*2,d=t.done?(Math.min(W,H)*0.4):(180+Math.random()*100);t.tx=(W/2)+Math.cos(a)*d;t.ty=(H/2)+Math.sin(a)*d;t.vx=(W/2-t.x)*0.05;t.vy=(H/2-t.y)*0.05;});}
 };
+// ── LIST SCROLL ──
+let listScrollY = 0;
+let listContentH = 0;
+const LIST_TOP = 120; // start y for first item
+const $listScrollBar   = document.getElementById('list-scroll-bar');
+const $listScrollThumb = document.getElementById('list-scroll-thumb');
+let scrollBarTimer = null;
+
+function updateListScrollBar() {
+    if (!isListView) { $listScrollBar.classList.remove('visible'); return; }
+    const viewH = innerHeight;
+    const totalH = listContentH;
+    if (totalH <= viewH) { $listScrollBar.classList.remove('visible'); return; }
+    const barH = Math.max(viewH * 0.8, 60);
+    $listScrollBar.style.height = barH + 'px';
+    $listScrollBar.classList.add('visible');
+    const thumbH = Math.max(30, barH * (viewH / totalH));
+    const maxScroll = totalH - viewH;
+    const thumbTop = ((-listScrollY) / maxScroll) * (barH - thumbH);
+    $listScrollThumb.style.height = thumbH + 'px';
+    $listScrollThumb.style.top = Math.max(0, thumbTop) + 'px';
+    // Auto-hide after 1.5s
+    clearTimeout(scrollBarTimer);
+    scrollBarTimer = setTimeout(() => $listScrollBar.classList.remove('visible'), 1500);
+}
+
+function clampListScroll() {
+    const maxScroll = Math.max(0, listContentH - innerHeight + 80);
+    listScrollY = Math.min(0, Math.max(-maxScroll, listScrollY));
+}
+
 function applyListLayout(){
     const sorted=[...tasks].sort((a,b)=>{const at=a.type==='note'?a.title:a.text,bt=b.type==='note'?b.title:b.text;return a.done!==b.done?a.done?1:-1:at.localeCompare(bt);});
     const W=innerWidth, cardW=210, margin=48;
-    let tx = listAlign==='left' ? margin+cardW/2 : listAlign==='right' ? W-margin-cardW/2 : W/2;
-    let cy=100;
-    sorted.forEach(t=>{const el=document.getElementById(`task-${t.id}`),ch=el?el.offsetHeight:50;t.tx=tx;t.ty=cy+ch/2;cy+=ch+15;t.vx=0;t.vy=0;});
+    const tx = listAlign==='left' ? margin+cardW/2 : listAlign==='right' ? W-margin-cardW/2 : W/2;
+    let cy = LIST_TOP;
+    sorted.forEach(t=>{
+        const el=document.getElementById(`task-${t.id}`),ch=el?el.offsetHeight:50;
+        t.tx=tx; t.ty=cy+ch/2+listScrollY; cy+=ch+15; t.vx=0; t.vy=0;
+    });
+    listContentH = cy - LIST_TOP;
+    clampListScroll();
+    updateListScrollBar();
 }
+
+// Mouse wheel scroll in list mode
+window.addEventListener('wheel', e => {
+    if (!isListView) return;
+    e.preventDefault();
+    listScrollY -= e.deltaY * 0.8;
+    clampListScroll();
+    applyListLayout();
+    updateListScrollBar();
+}, { passive: false });
+
+// Touch scroll in list mode
+let touchStartY = 0;
+window.addEventListener('touchstart', e => {
+    if (!isListView) return;
+    touchStartY = e.touches[0].clientY;
+}, { passive: true });
+window.addEventListener('touchmove', e => {
+    if (!isListView || draggedTask) return;
+    const dy = e.touches[0].clientY - touchStartY;
+    touchStartY = e.touches[0].clientY;
+    listScrollY += dy;
+    clampListScroll();
+    applyListLayout();
+    updateListScrollBar();
+}, { passive: true });
 
 function physicsLoop(){
     const W=innerWidth,H=innerHeight,time=Date.now();
